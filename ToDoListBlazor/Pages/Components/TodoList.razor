@@ -1,0 +1,69 @@
+﻿@page "/todolist"
+@inject ErrorManager errorManager
+@inject FileService fileService
+
+<h3>To-Do List</h3>
+
+<input @bind="newTask" @oninput="UpdateNewTask" placeholder="Add a new task" />
+<button @onclick="AddTask">Add</button>
+
+@if (!string.IsNullOrEmpty(errorManager.ErrorMessage))
+{
+    <div class="alert alert-danger">@errorManager.ErrorMessage</div>
+}
+
+<ul>
+    @foreach (var item in todoItems)
+    {
+        <li>
+            <input type="checkbox" @bind="item.IsCompleted" />
+            @item.TaskName
+            <button @onclick="() => RemoveTask(item.Id)">Remove</button>
+        </li>
+    }
+</ul>
+
+@code {
+
+    private List<TodoItem> todoItems = new List<TodoItem>();
+
+    private string newTask = "";
+
+    private const string filePath = @"C:\Users\joshua\Documents\TodoItem.txt";
+
+    private void UpdateNewTask(ChangeEventArgs e)
+    {
+        newTask = e.Value.ToString();
+    }
+
+    private void AddTask()
+    {
+        if (!string.IsNullOrWhiteSpace(newTask))
+        {
+            todoItems.Add(new TodoItem
+                {
+                    Id = todoItems.Count + 1,
+                    TaskName = newTask,
+                    IsCompleted = false
+                });
+
+            bool saveSuccess = fileService.SaveTasksToFile(todoItems);
+
+            if (saveSuccess)
+            {
+                newTask = ""; // Clear the input fields
+            }
+            else
+            {
+                errorManager.SetErrorMessage("Error saving the tasks. Please try again.");
+            }
+        }
+    }
+
+
+
+    private void RemoveTask(int itemId)
+    {
+        todoItems.RemoveAll(item => item.Id == itemId);
+    }
+}
